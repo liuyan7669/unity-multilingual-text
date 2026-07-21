@@ -1,0 +1,10 @@
+{
+  "name": "Cowart.MultilingualText.Editor",
+  "rootNamespace": "Cowart.MultilingualText.Editor",
+  "references": [
+    "Cowart.MultilingualText"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}
