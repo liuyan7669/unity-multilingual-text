@@ -33,7 +33,7 @@ com.cowart.multilingual-text
 ### 通过 Git URL 安装
 
 ```text
-https://github.com/liuyan7669/unity-multilingual-text.git#1.0.0
+https://github.com/liuyan7669/unity-multilingual-text.git#1.0.1
 ```
 
 ## 创建示例配置
@@ -69,13 +69,13 @@ https://github.com/liuyan7669/unity-multilingual-text.git#1.0.0
 - `content`：当前语言的完整文本内容，可直接包含换行符。
 - `audioPath`：当前语言的提示音频 `Resources` 相对路径，可为空。
 
-可通过 `Tools > 多语言文本 > 创建示例配置` 创建示例文件，已有同名文件时不会覆盖。
+可通过 `Cowart > 语言管理 > 创建示例配置` 创建示例文件，已有同名文件时不会覆盖。
 
 ## 使用方法
 
 ### 编辑多语言配置
 
-通过 `Tools > 多语言文本 > 打开编辑器`，或在 `MultilingualTextManager` Inspector 中打开可视化编辑器。编辑器支持：
+通过 `Cowart > 语言管理 > 打开编辑器`，或在 `MultilingualTextManager` Inspector 中打开可视化编辑器。编辑器支持：
 
 - 表格视图与详情视图，并记住上次使用的视图。
 - 搜索、查找下一个、当前替换和全部替换。

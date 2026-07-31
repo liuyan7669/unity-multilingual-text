@@ -46,7 +46,7 @@ namespace Cowart.MultilingualText.Editor
     ]
 }";
 
-        [MenuItem("Tools/多语言文本/创建示例配置")]
+        [MenuItem("Cowart/语言管理/创建示例配置")]
         private static void CreateDemoJson()
         {
             string folderPath = Path.Combine(Application.dataPath, "StreamingAssets");
