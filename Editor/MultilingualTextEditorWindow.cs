@@ -161,11 +161,28 @@ namespace Cowart.MultilingualText.Editor
         [MenuItem("Cowart/语言管理/打开编辑器")]
         public static void Open()
         {
+            OpenWindow();
+        }
+
+        /// <summary>打开管理器当前配置的多语言文本文件。</summary>
+        /// <param name="fileName">相对于 StreamingAssets 的配置文件名。</param>
+        public static void OpenManagerFile(string fileName)
+        {
+            string effectiveFileName = string.IsNullOrWhiteSpace(fileName)
+                ? Path.GetFileName(DefaultPath)
+                : fileName;
+            MultilingualTextEditorWindow window = OpenWindow();
+            window.LoadManagerFile(Path.Combine(Application.streamingAssetsPath, effectiveFileName));
+        }
+
+        private static MultilingualTextEditorWindow OpenWindow()
+        {
             MultilingualTextEditorWindow window = GetWindow<MultilingualTextEditorWindow>();
             window.titleContent = new GUIContent("多语言文本", GetIcon("TextAsset Icon"));
             window.minSize = new Vector2(920f, 580f);
             window.Show();
             window.Focus();
+            return window;
         }
 
         private static Texture GetIcon(string name)
@@ -1081,7 +1098,13 @@ namespace Cowart.MultilingualText.Editor
                 return;
             }
 
-            if (File.Exists(selectedPath)
+            CreateExampleFile(selectedPath, true, true);
+        }
+
+        private void CreateExampleFile(string selectedPath, bool confirmOverwrite, bool confirmDiscard)
+        {
+            if (confirmOverwrite
+                && File.Exists(selectedPath)
                 && !EditorUtility.DisplayDialog("覆盖文件", "目标文件已经存在，是否覆盖？", "覆盖", "取消"))
             {
                 return;
@@ -1098,7 +1121,7 @@ namespace Cowart.MultilingualText.Editor
 
                 File.WriteAllText(selectedPath, JsonUtility.ToJson(example, true), Utf8NoBom);
                 AssetDatabase.Refresh();
-                if (ConfirmDiscard())
+                if (!confirmDiscard || ConfirmDiscard())
                 {
                     table = example;
                     filePath = ToProjectPath(selectedPath);
@@ -1148,6 +1171,38 @@ namespace Cowart.MultilingualText.Editor
                 LoadFile(selected, true);
                 GUIUtility.ExitGUI();
             }
+        }
+
+        private void LoadManagerFile(string path)
+        {
+            string fullPath = ResolvePath(path);
+            bool isCurrentFile = string.Equals(fullPath, ResolvePath(filePath), StringComparison.OrdinalIgnoreCase);
+            if (isCurrentFile && File.Exists(fullPath))
+            {
+                return;
+            }
+
+            if (!ConfirmDiscard())
+            {
+                return;
+            }
+
+            if (LoadFile(fullPath, false))
+            {
+                return;
+            }
+
+            if (!EditorUtility.DisplayDialog(
+                    "配置文件不存在",
+                    $"未找到当前管理器配置的文件：\n{fullPath}\n\n是否在该位置创建示例配置？",
+                    "创建",
+                    "取消"))
+            {
+                SetStatus($"文件不存在：{fullPath}", MessageType.Warning);
+                return;
+            }
+
+            CreateExampleFile(fullPath, false, false);
         }
 
         private void ReloadFile()

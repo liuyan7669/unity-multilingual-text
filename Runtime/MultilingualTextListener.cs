@@ -13,12 +13,10 @@ namespace Cowart.MultilingualText
     {
         private const int UnboundTextId = 0;
 
-        [SerializeField, Min(0), Header("多语言文本 ID（0 表示未绑定）")]
-        [Tooltip("填写 multilingual_text.json 中大于 0 的内容 ID；0 表示当前组件不绑定任何多语言内容。")]
+        [SerializeField, Min(0), Tooltip("填写 multilingual_text.json 中大于 0 的内容 ID；0 表示当前组件不绑定任何多语言内容。")]
         private int textId = UnboundTextId;
 
-        [SerializeField, Header("缺少文本时清空组件")]
-        [Tooltip("启用后，配置已加载但找不到对应 ID 时会清空 Text/TMP_Text；关闭后保留当前显示内容。")]
+        [SerializeField, Tooltip("启用后，配置已加载但找不到对应 ID 时会清空 Text/TMP_Text；关闭后保留当前显示内容。")]
         private bool clearTextWhenMissing = true;
 
         private Text legacyText;

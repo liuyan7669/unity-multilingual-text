@@ -2,7 +2,9 @@
   "name": "Cowart.MultilingualText.Editor",
   "rootNamespace": "Cowart.MultilingualText.Editor",
   "references": [
-    "Cowart.MultilingualText"
+    "Cowart.MultilingualText",
+    "Unity.TextMeshPro",
+    "Unity.ugui"
   ],
   "includePlatforms": [
     "Editor"

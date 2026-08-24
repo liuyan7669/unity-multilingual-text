@@ -24,13 +24,13 @@ namespace Cowart.MultilingualText
         private static SupportedLanguage pendingLanguage = SupportedLanguage.ChineseSimplified;
         private static bool hasPendingLanguage;
 
-        [SerializeField, Header("多语言文本文件名")] private string fileName = DefaultFileName;
-        [SerializeField, Header("当前语言")] private SupportedLanguage currentLanguage = SupportedLanguage.ChineseSimplified;
-        [SerializeField, Header("缺少翻译时的回退语言")] private SupportedLanguage fallbackLanguage = SupportedLanguage.ChineseSimplified;
-        [SerializeField, Header("记住用户选择的语言")] private bool rememberLanguage;
-        [SerializeField] private string languagePreferenceKey = "MultilingualText.CurrentLanguage";
-        [SerializeField] private MultilingualTextLoadState loadState = MultilingualTextLoadState.NotLoaded;
-        [SerializeField] private string lastLoadError;
+        [SerializeField, Tooltip("StreamingAssets 目录下的多语言文本文件名。")] private string fileName = DefaultFileName;
+        [SerializeField, Tooltip("系统当前的运行语言。")] private SupportedLanguage currentLanguage = SupportedLanguage.ChineseSimplified;
+        [SerializeField, Tooltip("缺少对应语言翻译时的回退语言。")] private SupportedLanguage fallbackLanguage = SupportedLanguage.ChineseSimplified;
+        [SerializeField, Tooltip("是否在 PlayerPrefs 中记录用户的语言选择。")] private bool rememberLanguage;
+        [SerializeField, Tooltip("在 PlayerPrefs 中存储语言偏好的键名。")] private string languagePreferenceKey = "MultilingualText.CurrentLanguage";
+        [SerializeField, Tooltip("多语言文本配置的当前加载状态。")] private MultilingualTextLoadState loadState = MultilingualTextLoadState.NotLoaded;
+        [SerializeField, Tooltip("最近一次加载失败的错误信息。")] private string lastLoadError;
 
         private readonly MultilingualTextConfig config = new MultilingualTextConfig();
         private MultilingualTextObserverRegistry observerRegistry;
