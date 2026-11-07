@@ -35,7 +35,7 @@ com.cowart.multilingual-text
 ### 通过 Git URL 安装
 
 ```text
-https://github.com/liuyan7669/unity-multilingual-text.git#1.0.3
+https://github.com/liuyan7669/unity-multilingual-text.git#1.0.4
 ```
 
 ## 创建示例配置
