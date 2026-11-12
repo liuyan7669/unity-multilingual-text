@@ -1,6 +1,6 @@
-# Multilingual Text System
+# Multilingual Text
 
-适用于 Unity 的多语言文本系统，融合多语言文本与提示文本配置，支持外部查询、语言切换、提示音频路径和 `Text`/`TMP_Text` 自动刷新。
+适用于 Unity 的多语言文本，融合多语言文本与提示文本配置，支持外部查询、语言切换、提示音频路径和 `Text`/`TMP_Text` 自动刷新。
 
 ## 功能
 
@@ -9,7 +9,7 @@
 - 提供 `Text` 与 `TMP_Text` 自动监听刷新组件。
 - 提供可视化编辑器，支持搜索替换、数据校验、Undo/Redo 和未保存状态恢复。
 - 提供 Manager 与 Listener 专用 Inspector，支持配置文件诊断、词条预览和快捷操作。
-- 支持通过 Hierarchy 右键菜单定位或创建多语言文本系统。
+- 支持通过 Hierarchy 右键菜单定位或创建多语言文本。
 - 支持百度翻译 API 配置、单语言翻译、单记录翻译和整表翻译。
 - 翻译任务使用 Unity 可取消进度条，可随时停止。
 - 支持通过 `UnityWebRequest` 从 `StreamingAssets` 异步加载配置。
@@ -35,7 +35,7 @@ com.cowart.multilingual-text
 ### 通过 Git URL 安装
 
 ```text
-https://github.com/liuyan7669/unity-multilingual-text.git#1.0.4
+https://github.com/liuyan7669/unity-multilingual-text.git#1.0.5
 ```
 
 ## 创建示例配置
@@ -89,7 +89,7 @@ https://github.com/liuyan7669/unity-multilingual-text.git#1.0.4
 
 ### 场景初始化
 
-在 Hierarchy 中右键选择 `Cowart > 语言管理 > 创建多语言文本系统`。场景中已存在 `MultilingualTextManager` 时会直接选中并高亮，避免重复创建；不存在时会在场景根节点创建 `[多语言文本系统]`。
+在 Hierarchy 中右键选择 `Cowart > 语言管理 > 创建多语言文本`。场景中已存在 `MultilingualTextManager` 时会直接选中并高亮，避免重复创建；不存在时会在场景根节点创建 `[多语言文本]`。
 
 Manager Inspector 会检查 `File Name` 对应的 `StreamingAssets` 配置文件，并可直接打开当前配置、创建默认配置或定位文件。管理器会读取该配置，切换场景时保持存在。
 

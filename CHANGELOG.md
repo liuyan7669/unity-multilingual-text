@@ -1,12 +1,16 @@
 # Changelog
 
+## [1.0.5] - 2026-11-12
+
+- 显示名统一为 Multilingual Text，菜单、默认对象名和文档同步为多语言文本，修正 UGUI 程序集引用。
+
 ## [1.0.4] - 2026-11-08
 
 - 统一 Cowart 包图标：重新设计为按功能类别配色的圆角图标（文 / A 双语卡片），同步更新 `Icon.png` 与 `Icon@2x.png`。
 
 ## [1.0.3] - 2026-08-24
 
-- 新增 Hierarchy 右键菜单，可定位已有 `MultilingualTextManager` 或在当前场景创建多语言文本系统。
+- 新增 Hierarchy 右键菜单，可定位已有 `MultilingualTextManager` 或在当前场景创建多语言文本。
 - 新增 Manager 与 Listener 专用 Inspector，完善配置文件诊断、当前配置联动、词条预览和快捷操作。
 - 优化 Inspector 文件状态与 JSON 预览缓存，修复多选、缺失配置创建、运行时刷新及百度翻译窗口初始化等边界行为。
 

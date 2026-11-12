@@ -6,12 +6,12 @@ using UnityEngine.SceneManagement;
 namespace Cowart.MultilingualText.Editor
 {
     /// <summary>
-    /// 提供在 Hierarchy 中定位或创建多语言文本系统的菜单。
+    /// 提供在 Hierarchy 中定位或创建多语言文本的菜单。
     /// </summary>
     public static class MultilingualTextHierarchyCreator
     {
-        private const string MenuPath = "GameObject/Cowart/语言管理/创建多语言文本系统";
-        private const string ObjectName = "[多语言文本系统]";
+        private const string MenuPath = "GameObject/Cowart/语言管理/创建多语言文本";
+        private const string ObjectName = "[多语言文本]";
         private const int MenuPriority = 100;
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Cowart.MultilingualText.Editor
                 SceneManager.MoveGameObjectToScene(managerObject, targetScene);
             }
 
-            Undo.RegisterCreatedObjectUndo(managerObject, "Create Multilingual Text System");
+            Undo.RegisterCreatedObjectUndo(managerObject, "Create Multilingual Text");
             SelectAndPing(managerObject);
             EditorSceneManager.MarkSceneDirty(targetScene);
         }

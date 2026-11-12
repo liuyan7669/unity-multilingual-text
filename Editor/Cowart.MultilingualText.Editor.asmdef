@@ -4,7 +4,7 @@
   "references": [
     "Cowart.MultilingualText",
     "Unity.TextMeshPro",
-    "Unity.ugui"
+    "UnityEngine.UI"
   ],
   "includePlatforms": [
     "Editor"

@@ -76,7 +76,7 @@ namespace Cowart.MultilingualText
 
         private void Reset()
         {
-            gameObject.name = "[多语言文本系统]";
+            gameObject.name = "[多语言文本]";
             transform.position = Vector3.zero;
         }
 
@@ -153,7 +153,7 @@ namespace Cowart.MultilingualText
         {
             if (instance == null)
             {
-                Debug.LogWarning("多语言文本系统尚未初始化，无法重新加载配置文件。");
+                Debug.LogWarning("多语言文本尚未初始化，无法重新加载配置文件。");
                 return;
             }
 
