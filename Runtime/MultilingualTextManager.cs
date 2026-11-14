@@ -15,6 +15,7 @@ namespace Cowart.MultilingualText
     /// 加载多语言文本、管理当前语言并向外提供统一查询接口。
     /// </summary>
     [DefaultExecutionOrder(-1000)]
+    [Cowart.InspectorGroups.HideScript]
     public class MultilingualTextManager : MonoBehaviour
     {
         private const string DefaultFileName = "multilingual_text.json";
@@ -23,13 +24,23 @@ namespace Cowart.MultilingualText
         private static MultilingualTextObserverRegistry pendingObservers = new MultilingualTextObserverRegistry();
         private static SupportedLanguage pendingLanguage = SupportedLanguage.ChineseSimplified;
         private static bool hasPendingLanguage;
-
+        [Cowart.InspectorGroups.FoldoutGroup("基础配置", true, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework)]
+        [Cowart.InspectorGroups.Label("配置文件名")]
         [SerializeField, Tooltip("StreamingAssets 目录下的多语言文本文件名。")] private string fileName = DefaultFileName;
+        [Cowart.InspectorGroups.FoldoutGroup("语言设置", true, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework)]
+        [Cowart.InspectorGroups.Label("当前语言")]
         [SerializeField, Tooltip("系统当前的运行语言。")] private SupportedLanguage currentLanguage = SupportedLanguage.ChineseSimplified;
+        [Cowart.InspectorGroups.Label("缺省回退语言")]
         [SerializeField, Tooltip("缺少对应语言翻译时的回退语言。")] private SupportedLanguage fallbackLanguage = SupportedLanguage.ChineseSimplified;
+        [Cowart.InspectorGroups.FoldoutGroup("偏好持久化", true, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework)]
+        [Cowart.InspectorGroups.Label("记住用户语言")]
         [SerializeField, Tooltip("是否在 PlayerPrefs 中记录用户的语言选择。")] private bool rememberLanguage;
+        [Cowart.InspectorGroups.EnableIf("rememberLanguage")]
+        [Cowart.InspectorGroups.Label("存储键名")]
         [SerializeField, Tooltip("在 PlayerPrefs 中存储语言偏好的键名。")] private string languagePreferenceKey = "MultilingualText.CurrentLanguage";
+        [Cowart.InspectorGroups.ReadOnly]
         [SerializeField, Tooltip("多语言文本配置的当前加载状态。")] private MultilingualTextLoadState loadState = MultilingualTextLoadState.NotLoaded;
+        [Cowart.InspectorGroups.ReadOnly]
         [SerializeField, Tooltip("最近一次加载失败的错误信息。")] private string lastLoadError;
 
         private readonly MultilingualTextConfig config = new MultilingualTextConfig();

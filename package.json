@@ -1,12 +1,13 @@
 {
   "name": "com.cowart.multilingual-text",
-  "version": "1.0.5",
+  "version": "3.1.0",
   "displayName": "Multilingual Text",
   "description": "提供多语言文本与提示音频配置、运行时查询、语言切换和 Text/TMP_Text 自动刷新。",
   "unity": "2021.3",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.6",
-    "com.unity.ugui": "1.0.0"
+    "com.unity.ugui": "1.0.0",
+    "com.cowart.inspector-groups": "3.1.0"
   },
   "author": {
     "name": "Cowart"

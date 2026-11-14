@@ -2,394 +2,104 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Cowart.InspectorGroups.Editor;
 
 namespace Cowart.MultilingualText.Editor
 {
     [CustomEditor(typeof(MultilingualTextManager))]
     [CanEditMultipleObjects]
-    public class MultilingualTextManagerEditor : UnityEditor.Editor
+    public class MultilingualTextManagerEditor : InspectorGroupsEditor<MultilingualTextManager>
     {
-        private const string PrefKeyConfigFoldout = "Cowart.MultilingualText.Manager.ConfigFoldout";
-        private const string PrefKeyLanguageFoldout = "Cowart.MultilingualText.Manager.LanguageFoldout";
-        private const string PrefKeyPrefsFoldout = "Cowart.MultilingualText.Manager.PrefsFoldout";
-        private const string PrefKeyStatusFoldout = "Cowart.MultilingualText.Manager.StatusFoldout";
         private const string DefaultFileName = "multilingual_text.json";
         private const double ConfigFileRefreshInterval = 0.5d;
-
         private SerializedProperty fileNameProperty;
-        private SerializedProperty currentLanguageProperty;
-        private SerializedProperty fallbackLanguageProperty;
-        private SerializedProperty rememberLanguageProperty;
-        private SerializedProperty languagePreferenceKeyProperty;
         private SerializedProperty loadStateProperty;
         private SerializedProperty lastLoadErrorProperty;
-
-        private bool showConfigGroup = true;
-        private bool showLanguageGroup = true;
-        private bool showPrefsGroup = true;
-        private bool showStatusGroup = true;
         private string cachedConfigPath = string.Empty;
         private bool cachedConfigExists;
         private long cachedConfigLength;
         private double nextConfigFileRefreshTime;
 
-        private static class Styles
+        protected override void RefreshSerializedProperties()
         {
-            public static GUIStyle HeaderTitle;
-            public static GUIStyle StatusLabel;
-            public static GUIStyle LoadedStatus;
-            public static GUIStyle LoadingStatus;
-            public static GUIStyle FailedStatus;
-            public static GUIStyle NotLoadedStatus;
-            public static GUIStyle SectionBox;
-            public static GUIStyle PathLabel;
-            private static bool isInitialized;
-
-            public static void EnsureInitialized()
-            {
-                if (isInitialized) return;
-                isInitialized = true;
-
-                bool isDark = EditorGUIUtility.isProSkin;
-
-                HeaderTitle = new GUIStyle(EditorStyles.boldLabel)
-                {
-                    fontSize = 13,
-                    margin = new RectOffset(0, 0, 0, 0),
-                    padding = new RectOffset(0, 0, 0, 0),
-                    normal = { textColor = isDark ? new Color(0.92f, 0.95f, 1f) : new Color(0.15f, 0.2f, 0.25f) }
-                };
-
-                StatusLabel = new GUIStyle(EditorStyles.miniBoldLabel)
-                {
-                    fontSize = 11,
-                    alignment = TextAnchor.MiddleLeft
-                };
-
-                LoadedStatus = CreateStatusStyle(new Color(0.3f, 0.85f, 0.4f));
-                LoadingStatus = CreateStatusStyle(new Color(1f, 0.75f, 0.2f));
-                FailedStatus = CreateStatusStyle(new Color(1f, 0.35f, 0.35f));
-                NotLoadedStatus = CreateStatusStyle(isDark
-                    ? new Color(0.7f, 0.7f, 0.7f)
-                    : new Color(0.4f, 0.4f, 0.4f));
-
-                SectionBox = new GUIStyle(EditorStyles.helpBox)
-                {
-                    padding = new RectOffset(10, 10, 8, 8),
-                    margin = new RectOffset(0, 0, 4, 6)
-                };
-
-                PathLabel = new GUIStyle(EditorStyles.miniLabel)
-                {
-                    fontSize = 10,
-                    wordWrap = true,
-                    normal = { textColor = isDark ? new Color(0.55f, 0.8f, 0.55f) : new Color(0.15f, 0.55f, 0.2f) }
-                };
-
-            }
-
-            private static GUIStyle CreateStatusStyle(Color textColor)
-            {
-                return new GUIStyle(EditorStyles.boldLabel)
-                {
-                    normal = { textColor = textColor }
-                };
-            }
+            fileNameProperty = serializedObject.FindProperty("fileName");
+            loadStateProperty = serializedObject.FindProperty("loadState");
+            lastLoadErrorProperty = serializedObject.FindProperty("lastLoadError");
         }
 
         private void OnEnable()
         {
-            fileNameProperty = serializedObject.FindProperty("fileName");
-            currentLanguageProperty = serializedObject.FindProperty("currentLanguage");
-            fallbackLanguageProperty = serializedObject.FindProperty("fallbackLanguage");
-            rememberLanguageProperty = serializedObject.FindProperty("rememberLanguage");
-            languagePreferenceKeyProperty = serializedObject.FindProperty("languagePreferenceKey");
-            loadStateProperty = serializedObject.FindProperty("loadState");
-            lastLoadErrorProperty = serializedObject.FindProperty("lastLoadError");
-
-            showConfigGroup = EditorPrefs.GetBool(PrefKeyConfigFoldout, true);
-            showLanguageGroup = EditorPrefs.GetBool(PrefKeyLanguageFoldout, true);
-            showPrefsGroup = EditorPrefs.GetBool(PrefKeyPrefsFoldout, true);
-            showStatusGroup = EditorPrefs.GetBool(PrefKeyStatusFoldout, true);
             EditorApplication.projectChanged += InvalidateConfigFileState;
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
-            EditorPrefs.SetBool(PrefKeyConfigFoldout, showConfigGroup);
-            EditorPrefs.SetBool(PrefKeyLanguageFoldout, showLanguageGroup);
-            EditorPrefs.SetBool(PrefKeyPrefsFoldout, showPrefsGroup);
-            EditorPrefs.SetBool(PrefKeyStatusFoldout, showStatusGroup);
             EditorApplication.projectChanged -= InvalidateConfigFileState;
+            base.OnDisable();
         }
 
-        public override void OnInspectorGUI()
+        protected override void BuildInspector(InspectorContent content)
         {
-            Styles.EnsureInitialized();
-            serializedObject.Update();
-
-            DrawHeaderBanner();
-
-            EditorGUILayout.Space(2f);
-
-            DrawConfigurationSection();
-            DrawLanguageSection();
-            DrawPreferencesSection();
-            DrawRuntimeStatusSection();
-
-            EditorGUILayout.Space(4f);
-            DrawActionButtons();
-
-            serializedObject.ApplyModifiedProperties();
+            content.Exclude("loadState", "lastLoadError");
+            content.Group("ConfigFile", "配置文件与诊断", DescribeConfiguration, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
+            content.Group("LanguageStatus", "运行状态", DescribeRuntimeStatus, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
+            content.Group("LanguageActions", "多语言操作", DescribeActions, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
+            if (Application.isPlaying) Repaint();
         }
 
-        private void DrawHeaderBanner()
+        private void DescribeConfiguration(InspectorContent content)
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(26f)))
+            if (fileNameProperty.hasMultipleDifferentValues)
             {
-                GUIContent icon = EditorGUIUtility.IconContent("TextAsset Icon");
-                GUILayout.Label(icon, GUILayout.Width(20f), GUILayout.Height(20f));
-
-                GUILayout.Label("多语言管理器 (Multilingual Text Manager)", Styles.HeaderTitle);
-                GUILayout.FlexibleSpace();
-
-                if (Application.isPlaying)
-                {
-                    GUIContent playBadge = new GUIContent("● 运行中", "游戏正在运行，修改语言将即时生效");
-                    GUILayout.Label(playBadge, Styles.StatusLabel);
-                }
+                content.Message("所选管理器的配置文件名不一致，请分别编辑或先统一文件名。");
+                return;
             }
+            if (!TryGetConfigPath(out string fullPath, out string relativePath, out string error))
+            {
+                content.Message(error, MessageType.Error);
+                return;
+            }
+            RefreshConfigFileState(fullPath);
+            if (cachedConfigExists)
+                content.Message($"{relativePath} ({cachedConfigLength / 1024f:0.0} KB)");
+            else
+            {
+                content.Message($"未找到配置文件：{relativePath}", MessageType.Warning);
+                content.Action("创建默认配置文件", () => CreateDefaultConfigFile(fullPath));
+            }
+            content.Action("定位配置文件", () => PingFile(fullPath), cachedConfigExists);
+            content.Action("浏览配置文件目录", () => RevealDirectory(fullPath));
         }
 
-        private void DrawConfigurationSection()
+        private void DescribeRuntimeStatus(InspectorContent content)
         {
-            showConfigGroup = EditorGUILayout.BeginFoldoutHeaderGroup(showConfigGroup, " 基础配置 (Configuration)");
-            if (showConfigGroup)
-            {
-                using (new EditorGUI.IndentLevelScope(1))
-                {
-                    EditorGUILayout.Space(2f);
-
-                    bool hasMixedFileNames = fileNameProperty.hasMultipleDifferentValues;
-                    string fullPath = string.Empty;
-                    string relativePath = string.Empty;
-                    string pathError = string.Empty;
-                    bool hasValidPath = !hasMixedFileNames && TryGetConfigPath(out fullPath, out relativePath, out pathError);
-                    if (hasValidPath)
-                    {
-                        RefreshConfigFileState(fullPath);
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUILayout.PropertyField(fileNameProperty, new GUIContent("配置文件名", "StreamingAssets 目录下的多语言 JSON 文件名"));
-
-                        using (new EditorGUI.DisabledScope(!hasValidPath || !cachedConfigExists))
-                        {
-                            if (GUILayout.Button(new GUIContent("定位", EditorGUIUtility.IconContent("Search Icon").image, "在 Project 视窗中高亮该文件"), EditorStyles.miniButton, GUILayout.Width(56f), GUILayout.Height(18f)))
-                            {
-                                PingFile(fullPath);
-                            }
-                        }
-
-                        using (new EditorGUI.DisabledScope(!hasValidPath))
-                        {
-                            if (GUILayout.Button(new GUIContent("浏览", EditorGUIUtility.IconContent("Folder Icon").image, "在资源管理器中查看文件所在目录"), EditorStyles.miniButton, GUILayout.Width(56f), GUILayout.Height(18f)))
-                            {
-                                RevealDirectory(fullPath);
-                            }
-                        }
-                    }
-
-                    if (hasMixedFileNames)
-                    {
-                        EditorGUILayout.HelpBox("所选管理器的配置文件名不一致，请分别编辑或先统一文件名。", MessageType.Info);
-                    }
-                    else if (!hasValidPath)
-                    {
-                        EditorGUILayout.HelpBox(pathError, MessageType.Error);
-                    }
-                    else if (cachedConfigExists)
-                    {
-                        EditorGUILayout.LabelField(GUIContent.none, new GUIContent($"✓ 路径: {relativePath}  ({cachedConfigLength / 1024f:0.0} KB)", EditorGUIUtility.IconContent("Installed").image), Styles.PathLabel);
-                    }
-                    else
-                    {
-                        EditorGUILayout.HelpBox($"未找到配置文件: {relativePath}\n请确保文件已放置在 StreamingAssets 目录下。", MessageType.Warning);
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.FlexibleSpace();
-                            if (GUILayout.Button("➕ 自动创建默认配置文件", GUILayout.Height(22f), GUILayout.Width(180f)))
-                            {
-                                CreateDefaultConfigFile(fullPath);
-                            }
-                        }
-                    }
-
-                    EditorGUILayout.Space(2f);
-                }
-            }
-            EditorGUILayout.EndFoldoutHeaderGroup();
+            var state = Application.isPlaying ? MultilingualTextManager.LoadState
+                : (MultilingualTextLoadState)loadStateProperty.intValue;
+            content.Value("加载状态", state.ToString());
+            string error = Application.isPlaying ? MultilingualTextManager.LastLoadError : lastLoadErrorProperty.stringValue;
+            if (!string.IsNullOrWhiteSpace(error)) content.Message(error, MessageType.Error);
+            content.Action("重新加载", () => MultilingualTextManager.Reload(), Application.isPlaying);
         }
 
-        private void DrawLanguageSection()
+        private void DescribeActions(InspectorContent content)
         {
-            showLanguageGroup = EditorGUILayout.BeginFoldoutHeaderGroup(showLanguageGroup, " 语言设置 (Language Settings)");
-            if (showLanguageGroup)
+            content.Action("重置语言偏好存储键名", () =>
             {
-                using (new EditorGUI.IndentLevelScope(1))
-                {
-                    EditorGUILayout.Space(2f);
-
-                    EditorGUILayout.PropertyField(currentLanguageProperty, new GUIContent("当前语言", "游戏界面当前显示的目标语言"));
-                    EditorGUILayout.PropertyField(fallbackLanguageProperty, new GUIContent("缺省回退语言", "当某一词条缺少目标语言翻译时，自动回退显示的语言"));
-
-                    EditorGUILayout.Space(2f);
-                }
-            }
-            EditorGUILayout.EndFoldoutHeaderGroup();
-        }
-
-        private void DrawPreferencesSection()
-        {
-            showPrefsGroup = EditorGUILayout.BeginFoldoutHeaderGroup(showPrefsGroup, " 偏好持久化 (Preferences)");
-            if (showPrefsGroup)
+                serializedObject.FindProperty("languagePreferenceKey").stringValue = "MultilingualText.CurrentLanguage";
+                serializedObject.ApplyModifiedProperties();
+            });
+            content.Action("打开多语言可视化编辑器", () =>
+                MultilingualTextEditorWindow.OpenManagerFile(fileNameProperty.stringValue), !fileNameProperty.hasMultipleDifferentValues);
+            content.Action("百度自动翻译", () => BaiduTranslationEditorWindow.Open(null));
+            content.Action("打开 StreamingAssets 目录", () =>
             {
-                using (new EditorGUI.IndentLevelScope(1))
+                if (!Directory.Exists(Application.streamingAssetsPath))
                 {
-                    EditorGUILayout.Space(2f);
-
-                    EditorGUILayout.PropertyField(rememberLanguageProperty, new GUIContent("记住用户语言", "切换语言时是否自动保存到 PlayerPrefs 本地存储"));
-
-                    if (rememberLanguageProperty.boolValue)
-                    {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            EditorGUILayout.PropertyField(languagePreferenceKeyProperty, new GUIContent("存储键名 (Key)", "保存在 PlayerPrefs 中的唯一键名"));
-                            if (GUILayout.Button("重置", EditorStyles.miniButton, GUILayout.Width(42f)))
-                            {
-                                languagePreferenceKeyProperty.stringValue = "MultilingualText.CurrentLanguage";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        using (new EditorGUI.DisabledScope(true))
-                        {
-                            EditorGUILayout.PropertyField(languagePreferenceKeyProperty, new GUIContent("存储键名 (Key)", "未启用记住语言"));
-                        }
-                    }
-
-                    EditorGUILayout.Space(2f);
+                    Directory.CreateDirectory(Application.streamingAssetsPath);
+                    AssetDatabase.Refresh();
                 }
-            }
-            EditorGUILayout.EndFoldoutHeaderGroup();
-        }
-
-        private void DrawRuntimeStatusSection()
-        {
-            showStatusGroup = EditorGUILayout.BeginFoldoutHeaderGroup(showStatusGroup, " 运行状态与诊断 (Runtime Status)");
-            if (showStatusGroup)
-            {
-                using (new EditorGUI.IndentLevelScope(1))
-                {
-                    EditorGUILayout.Space(2f);
-
-                    MultilingualTextLoadState state = Application.isPlaying
-                        ? MultilingualTextManager.LoadState
-                        : (MultilingualTextLoadState)loadStateProperty.intValue;
-
-                    string stateText;
-                    string iconName;
-                    GUIStyle statusStyle;
-
-                    switch (state)
-                    {
-                        case MultilingualTextLoadState.Loaded:
-                            stateText = "● 已加载 (Loaded)";
-                            iconName = "TestPassed";
-                            statusStyle = Styles.LoadedStatus;
-                            break;
-                        case MultilingualTextLoadState.Loading:
-                            stateText = "● 加载中 (Loading...)";
-                            iconName = "Loading";
-                            statusStyle = Styles.LoadingStatus;
-                            break;
-                        case MultilingualTextLoadState.Failed:
-                            stateText = "● 加载失败 (Failed)";
-                            iconName = "TestFailed";
-                            statusStyle = Styles.FailedStatus;
-                            break;
-                        default:
-                            stateText = "○ 未加载 (Not Loaded)";
-                            iconName = "TestNormal";
-                            statusStyle = Styles.NotLoadedStatus;
-                            break;
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUILayout.PrefixLabel("加载状态");
-                        GUILayout.Label(new GUIContent(stateText, EditorGUIUtility.IconContent(iconName).image), statusStyle);
-
-                        GUILayout.FlexibleSpace();
-
-                        if (Application.isPlaying)
-                        {
-                            if (GUILayout.Button(new GUIContent(" 重新加载", EditorGUIUtility.IconContent("TreeEditor.Refresh").image), EditorStyles.miniButton, GUILayout.Height(18f)))
-                            {
-                                MultilingualTextManager.Reload();
-                            }
-                        }
-                    }
-
-                    string errorMsg = Application.isPlaying ? MultilingualTextManager.LastLoadError : lastLoadErrorProperty.stringValue;
-                    if (!string.IsNullOrWhiteSpace(errorMsg))
-                    {
-                        EditorGUILayout.HelpBox($"最后加载错误: {errorMsg}", MessageType.Error);
-                    }
-
-                    EditorGUILayout.Space(2f);
-                }
-            }
-            EditorGUILayout.EndFoldoutHeaderGroup();
-        }
-
-        private void DrawActionButtons()
-        {
-            using (new EditorGUILayout.VerticalScope(Styles.SectionBox))
-            {
-                bool cannotOpen = fileNameProperty == null || fileNameProperty.hasMultipleDifferentValues;
-
-                using (new EditorGUI.DisabledScope(cannotOpen))
-                {
-                    GUIContent editorBtnContent = new GUIContent("  打开多语言可视化编辑器 (Visual Editor)", EditorGUIUtility.IconContent("TextAsset Icon").image);
-                    if (GUILayout.Button(editorBtnContent, GUILayout.Height(30f)))
-                    {
-                        MultilingualTextEditorWindow.OpenManagerFile(fileNameProperty.stringValue);
-                    }
-                }
-
-                EditorGUILayout.Space(2f);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button(new GUIContent(" 百度自动翻译", EditorGUIUtility.IconContent("d_SettingsIcon").image), EditorStyles.miniButton, GUILayout.Height(22f)))
-                    {
-                        BaiduTranslationEditorWindow.Open(null);
-                    }
-
-                    if (GUILayout.Button(new GUIContent(" 打开 StreamingAssets 目录", EditorGUIUtility.IconContent("Folder Icon").image), EditorStyles.miniButton, GUILayout.Height(22f)))
-                    {
-                        if (!Directory.Exists(Application.streamingAssetsPath))
-                        {
-                            Directory.CreateDirectory(Application.streamingAssetsPath);
-                            AssetDatabase.Refresh();
-                        }
-                        EditorUtility.RevealInFinder(Application.streamingAssetsPath);
-                    }
-                }
-            }
+                EditorUtility.RevealInFinder(Application.streamingAssetsPath);
+            });
         }
 
         private bool TryGetConfigPath(out string fullPath, out string relativePath, out string error)

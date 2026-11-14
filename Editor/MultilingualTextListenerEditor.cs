@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using TMPro;
 using UnityEditor;
+using Cowart.InspectorGroups.Editor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,7 +13,7 @@ namespace Cowart.MultilingualText.Editor
 {
     [CustomEditor(typeof(MultilingualTextListener))]
     [CanEditMultipleObjects]
-    public class MultilingualTextListenerEditor : UnityEditor.Editor
+    public class MultilingualTextListenerEditor : InspectorGroupsEditor<MultilingualTextListener>
     {
         private const string DefaultFileName = "multilingual_text.json";
         private const double PreviewFileRefreshInterval = 0.5d;
@@ -30,222 +31,103 @@ namespace Cowart.MultilingualText.Editor
         private long cachedJsonWriteTicks = -1L;
         private double nextPreviewFileRefreshTime;
 
-        private static class Styles
+        protected override void RefreshSerializedProperties()
         {
-            public static GUIStyle HeaderTitle;
-            public static GUIStyle PreviewBox;
-            public static GUIStyle PreviewText;
-            private static bool isInitialized;
-
-            public static void EnsureInitialized()
-            {
-                if (isInitialized) return;
-                isInitialized = true;
-
-                bool isDark = EditorGUIUtility.isProSkin;
-
-                HeaderTitle = new GUIStyle(EditorStyles.boldLabel)
-                {
-                    fontSize = 12,
-                    normal = { textColor = isDark ? new Color(0.92f, 0.95f, 1f) : new Color(0.15f, 0.2f, 0.25f) }
-                };
-
-                PreviewBox = new GUIStyle(EditorStyles.helpBox)
-                {
-                    padding = new RectOffset(8, 8, 6, 6),
-                    margin = new RectOffset(0, 0, 4, 4)
-                };
-
-                PreviewText = new GUIStyle(EditorStyles.wordWrappedLabel)
-                {
-                    fontSize = 11,
-                    normal = { textColor = isDark ? new Color(0.85f, 0.9f, 0.85f) : new Color(0.1f, 0.4f, 0.15f) }
-                };
-            }
+            textIdProperty = serializedObject.FindProperty("textId");
+            clearTextWhenMissingProperty = serializedObject.FindProperty("clearTextWhenMissing");
         }
 
         private void OnEnable()
         {
-            textIdProperty = serializedObject.FindProperty("textId");
-            clearTextWhenMissingProperty = serializedObject.FindProperty("clearTextWhenMissing");
             RefreshManagerReference();
             EditorApplication.hierarchyChanged += OnHierarchyChanged;
             EditorApplication.projectChanged += InvalidatePreviewCache;
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
             EditorApplication.hierarchyChanged -= OnHierarchyChanged;
             EditorApplication.projectChanged -= InvalidatePreviewCache;
+            base.OnDisable();
         }
 
-        public override void OnInspectorGUI()
+        protected override void BuildInspector(InspectorContent content)
         {
-            Styles.EnsureInitialized();
-            serializedObject.Update();
-
-            DrawHeaderBanner();
-            EditorGUILayout.Space(4f);
-            DrawTargetStatus();
-
-            EditorGUILayout.PropertyField(textIdProperty, new GUIContent("多语言文本 ID", "对应当前管理器配置文件中的内容 ID（0 表示未绑定）"));
-            EditorGUILayout.PropertyField(clearTextWhenMissingProperty, new GUIContent("缺失时清空文本", "当词条找不到时是否清空 Text 组件，关闭则保留当前文字"));
-
-            if (targets.Length > 1 || textIdProperty.hasMultipleDifferentValues)
+            content.Group("TextTarget", "目标文本组件", DescribeTargetStatus, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
+            content.Group("TextPreview", "词条预览", preview =>
             {
-                EditorGUILayout.HelpBox("多选状态下不显示词条内容预览。", MessageType.Info);
-            }
-            else if (textIdProperty.intValue > 0)
+                if (targets.Length > 1 || textIdProperty.hasMultipleDifferentValues)
+                    preview.Message("多选状态下不显示词条内容预览。");
+                else if (textIdProperty.intValue > 0) DescribeItemPreview(preview, textIdProperty.intValue);
+                else preview.Message("当前文本 ID 为 0（未绑定），此组件不会修改 Text 内容。", MessageType.None);
+            }, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
+            content.Group("TextActions", "文本操作", actions =>
             {
-                DrawItemPreview(textIdProperty.intValue);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox("当前文本 ID 为 0（未绑定），此组件不会修改 Text 内容。", MessageType.None);
-            }
-
-            serializedObject.ApplyModifiedProperties();
-            EditorGUILayout.Space(4f);
-            DrawActionButtons();
+                actions.Action("刷新显示", () =>
+                {
+                    foreach (var candidate in targets)
+                        if (candidate is MultilingualTextListener listener) listener.RefreshText();
+                }, Application.isPlaying, "仅在运行模式下立即刷新绑定文本");
+                actions.Action("打开编辑器", () => MultilingualTextEditorWindow.OpenManagerFile(GetConfiguredFileName()));
+            }, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework);
         }
 
-        private static void DrawHeaderBanner()
-        {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(24f)))
-            {
-                GUIContent icon = EditorGUIUtility.IconContent("TextAsset Icon");
-                GUILayout.Label(icon, GUILayout.Width(18f), GUILayout.Height(18f));
-                GUILayout.Label("多语言文本监听器 (Text Listener)", Styles.HeaderTitle);
-                GUILayout.FlexibleSpace();
-            }
-        }
-
-        private void DrawTargetStatus()
+        private void DescribeTargetStatus(InspectorContent content)
         {
             int missingComponentCount = 0;
             TMP_Text firstTmpText = null;
             bool firstHasLegacyText = false;
-
             for (int i = 0; i < targets.Length; i++)
             {
-                MultilingualTextListener listener = targets[i] as MultilingualTextListener;
-                if (listener == null)
-                {
-                    continue;
-                }
-
-                TMP_Text tmpText = listener.GetComponent<TMP_Text>();
+                var listener = targets[i] as MultilingualTextListener;
+                if (listener == null) continue;
+                var tmpText = listener.GetComponent<TMP_Text>();
                 bool hasLegacyText = listener.GetComponent<Text>() != null;
-                if (i == 0)
-                {
-                    firstTmpText = tmpText;
-                    firstHasLegacyText = hasLegacyText;
-                }
-
-                if (tmpText == null && !hasLegacyText)
-                {
-                    missingComponentCount++;
-                }
+                if (i == 0) { firstTmpText = tmpText; firstHasLegacyText = hasLegacyText; }
+                if (tmpText == null && !hasLegacyText) missingComponentCount++;
             }
-
             if (missingComponentCount > 0)
             {
                 string message = targets.Length == 1
                     ? "当前对象上未找到 Text 或 TextMeshPro 组件，多语言系统将无法更新界面显示。"
                     : $"所选对象中有 {missingComponentCount} 个未找到 Text 或 TextMeshPro 组件。";
-                EditorGUILayout.HelpBox(message, MessageType.Warning);
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("➕ 添加 TextMeshPro", EditorStyles.miniButton))
-                    {
-                        AddTextComponentToMissingTargets<TextMeshProUGUI>();
-                    }
-                    if (GUILayout.Button("➕ 添加 Legacy Text", EditorStyles.miniButton))
-                    {
-                        AddTextComponentToMissingTargets<Text>();
-                    }
-                }
-                EditorGUILayout.Space(4f);
+                content.Message(message, MessageType.Warning);
+                content.Action("添加 TextMeshPro", AddTextComponentToMissingTargets<TextMeshProUGUI>);
+                content.Action("添加 Legacy Text", AddTextComponentToMissingTargets<Text>);
                 return;
             }
-
             string componentName = targets.Length > 1
                 ? $"{targets.Length} 个对象均已绑定文本组件"
-                : firstTmpText != null
-                    ? "TextMeshPro (" + firstTmpText.GetType().Name + ")"
+                : firstTmpText != null ? "TextMeshPro (" + firstTmpText.GetType().Name + ")"
                     : firstHasLegacyText ? "Legacy Text" : "未知";
-            EditorGUILayout.LabelField(new GUIContent(" 目标组件", EditorGUIUtility.IconContent("Installed").image), new GUIContent(componentName), EditorStyles.miniLabel);
+            content.Value("目标组件", componentName);
         }
 
-        private void DrawActionButtons()
+        private void DescribeItemPreview(InspectorContent content, int id)
         {
-            using (new EditorGUILayout.HorizontalScope())
+            if (!TryGetConfigPath(out string jsonPath, out string pathError))
             {
-                using (new EditorGUI.DisabledScope(!Application.isPlaying))
-                {
-                    GUIContent refreshContent = new GUIContent(" 刷新显示", EditorGUIUtility.IconContent("TreeEditor.Refresh").image, "仅在运行模式下立即刷新绑定文本");
-                    if (GUILayout.Button(refreshContent, GUILayout.Height(24f)))
-                    {
-                        for (int i = 0; i < targets.Length; i++)
-                        {
-                            MultilingualTextListener listener = targets[i] as MultilingualTextListener;
-                            if (listener != null)
-                            {
-                                listener.RefreshText();
-                            }
-                        }
-                    }
-                }
-
-                if (GUILayout.Button(new GUIContent(" 打开编辑器", EditorGUIUtility.IconContent("TextAsset Icon").image), GUILayout.Height(24f)))
-                {
-                    MultilingualTextEditorWindow.OpenManagerFile(GetConfiguredFileName());
-                }
-            }
-        }
-
-        private void DrawItemPreview(int id)
-        {
-            string jsonPath;
-            string pathError;
-            if (!TryGetConfigPath(out jsonPath, out pathError))
-            {
-                EditorGUILayout.HelpBox(pathError, MessageType.Error);
+                content.Message(pathError, MessageType.Error);
                 return;
             }
-
             RefreshPreviewCache(jsonPath);
             if (!string.IsNullOrEmpty(cachedPreviewError))
             {
-                EditorGUILayout.HelpBox(cachedPreviewError, MessageType.Warning);
+                content.Message(cachedPreviewError, MessageType.Warning);
                 return;
             }
-
-            MultilingualTextItem item;
-            if (!cachedItems.TryGetValue(id, out item) || item.translations == null || item.translations.Count == 0)
+            if (!cachedItems.TryGetValue(id, out MultilingualTextItem item) || item.translations == null || item.translations.Count == 0)
             {
-                EditorGUILayout.HelpBox($"配置文件中未找到 ID 为 {id} 的词条，请检查配置或在编辑器中添加。", MessageType.Warning);
+                content.Message($"配置文件中未找到 ID 为 {id} 的词条，请检查配置或在编辑器中添加。", MessageType.Warning);
                 return;
             }
-
-            using (new EditorGUILayout.VerticalScope(Styles.PreviewBox))
+            content.Value("词条 ID", id.ToString());
+            foreach (var translation in item.translations)
             {
-                EditorGUILayout.LabelField($"🔍 词条 ID {id} 内容预览:", EditorStyles.miniBoldLabel);
-                for (int i = 0; i < item.translations.Count; i++)
-                {
-                    MultilingualTextTranslation translation = item.translations[i];
-                    if (translation == null || string.IsNullOrEmpty(translation.content))
-                    {
-                        continue;
-                    }
-
-                    string previewSnippet = translation.content.Replace("\n", " ");
-                    if (previewSnippet.Length > 40)
-                    {
-                        previewSnippet = previewSnippet.Substring(0, 40) + "...";
-                    }
-                    EditorGUILayout.LabelField($"• {translation.language}:", previewSnippet, Styles.PreviewText);
-                }
+                if (translation == null || string.IsNullOrEmpty(translation.content)) continue;
+                string previewSnippet = translation.content.Replace("\n", " ");
+                if (previewSnippet.Length > 40) previewSnippet = previewSnippet.Substring(0, 40) + "...";
+                content.Value(translation.language.ToString(), previewSnippet);
             }
         }
 
@@ -356,10 +238,11 @@ namespace Cowart.MultilingualText.Editor
                 RefreshManagerReference();
             }
 
-            if (managerSerializedObject != null && managerFileNameProperty != null)
+            if (managerSerializedObject != null)
             {
                 managerSerializedObject.UpdateIfRequiredOrScript();
-                string configuredFileName = managerFileNameProperty.stringValue;
+                managerFileNameProperty = managerSerializedObject.FindProperty("fileName");
+                string configuredFileName = managerFileNameProperty != null ? managerFileNameProperty.stringValue : null;
                 if (!string.IsNullOrWhiteSpace(configuredFileName))
                 {
                     return configuredFileName.Trim();

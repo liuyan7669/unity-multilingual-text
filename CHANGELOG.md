@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+## [3.1.0] - 2026-11-14
+
+- 接入 OpenUPM 官方 tag 发布工作流，自动触发扫描并检查注册表发布结果。
+
+- 统一 Cowart 包版本为 3.1.0。
+
+- 包内分组显式使用 Inspector Groups 框架样式；用户新增分组默认保持普通样式，所有绘制集中在 Inspector Groups。
+
+- Inspector 改为声明字段、状态和操作回调，所有布局与控件由 Inspector Groups 统一绘制，移除包内 Inspector 手工绘制代码。
+
+- 使用类级 HideScript 声明隐藏 Script 行，移除专用 Inspector 中写死的排除规则。
+
+- 修复选中对象在脚本继承关系变更、重编译后旧 Inspector 继续访问失效字段的问题；统一验证目标类型并刷新字段绑定。
+
+- 声明 Inspector Groups 3.1.0 依赖；移除包内 Inspector 自定义样式，业务操作复用统一绘制。
+
+- 按功能整理 Cowart 菜单分类与名称，菜单声明保留在所属包内。
+
+- 将 Hierarchy 创建入口统一为 `Cowart > 框架 > 创建多语言系统`，保留已有管理器定位行为。
+
 ## [1.0.5] - 2026-11-12
 
 - 显示名统一为 Multilingual Text，菜单、默认对象名和文档同步为多语言文本，修正 UGUI 程序集引用。

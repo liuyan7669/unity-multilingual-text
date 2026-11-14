@@ -10,15 +10,15 @@ namespace Cowart.MultilingualText.Editor
     /// </summary>
     public static class MultilingualTextHierarchyCreator
     {
-        private const string MenuPath = "GameObject/Cowart/语言管理/创建多语言文本";
+        private const string MenuPath = "GameObject/Cowart/框架/创建多语言系统";
         private const string ObjectName = "[多语言文本]";
-        private const int MenuPriority = 100;
+        private const int MenuPriority = 102;
 
         /// <summary>
         /// 定位目标场景中的现有管理器；不存在时在场景根节点创建一个。
         /// </summary>
         /// <param name="menuCommand">Unity 菜单命令上下文。</param>
-        [MenuItem(MenuPath, false, MenuPriority)]
+        [MenuItem(MenuPath, false, -10000)]
         private static void LocateOrCreate(MenuCommand menuCommand)
         {
             Scene targetScene = GetTargetScene(menuCommand.context as GameObject);

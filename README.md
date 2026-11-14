@@ -35,7 +35,7 @@ com.cowart.multilingual-text
 ### 通过 Git URL 安装
 
 ```text
-https://github.com/liuyan7669/unity-multilingual-text.git#1.0.5
+https://github.com/liuyan7669/unity-multilingual-text.git#3.1.0
 ```
 
 ## 创建示例配置
@@ -71,13 +71,13 @@ https://github.com/liuyan7669/unity-multilingual-text.git#1.0.5
 - `content`：当前语言的完整文本内容，可直接包含换行符。
 - `audioPath`：当前语言的提示音频 `Resources` 相对路径，可为空。
 
-可通过 `Cowart > 语言管理 > 创建示例配置` 创建示例文件，已有同名文件时不会覆盖。
+可通过 `Cowart > 配置 > 多语言 > 创建示例配置` 创建示例文件，已有同名文件时不会覆盖。
 
 ## 使用方法
 
 ### 编辑多语言配置
 
-通过 `Cowart > 语言管理 > 打开编辑器`，或在 `MultilingualTextManager` Inspector 中打开可视化编辑器。编辑器支持：
+通过 `Cowart > 配置 > 多语言 > 文本编辑器`，或在 `MultilingualTextManager` Inspector 中打开可视化编辑器。编辑器支持：
 
 - 表格视图与详情视图，并记住上次使用的视图。
 - 搜索、查找下一个、当前替换和全部替换。
@@ -89,7 +89,7 @@ https://github.com/liuyan7669/unity-multilingual-text.git#1.0.5
 
 ### 场景初始化
 
-在 Hierarchy 中右键选择 `Cowart > 语言管理 > 创建多语言文本`。场景中已存在 `MultilingualTextManager` 时会直接选中并高亮，避免重复创建；不存在时会在场景根节点创建 `[多语言文本]`。
+在 Hierarchy 中右键选择 `Cowart > 框架 > 创建多语言系统`。场景中已存在 `MultilingualTextManager` 时会直接选中并高亮，避免重复创建；不存在时会在场景根节点创建 `[多语言文本]`。
 
 Manager Inspector 会检查 `File Name` 对应的 `StreamingAssets` 配置文件，并可直接打开当前配置、创建默认配置或定位文件。管理器会读取该配置，切换场景时保持存在。
 
@@ -148,3 +148,7 @@ Listener Inspector 会按照当前场景 Manager 的 `File Name` 显示词条内
 ## 许可证
 
 本包使用 MIT License，详情参见 `LICENSE.md`。
+
+## Inspector 统一依赖
+
+本包声明依赖 `com.cowart.inspector-groups` `3.1.0`，Inspector 样式统一由该基础包提供。安装前须配置 OpenUPM scoped registry（`https://package.openupm.com`，scope `com.cowart`）；UPM 会根据 dependencies 连带解析 Inspector Groups。使用未发布源码时，请同时使用本地 Inspector Groups 3.1.0。业务包之间不互相依赖，Samples 的可选组合不受此限制。

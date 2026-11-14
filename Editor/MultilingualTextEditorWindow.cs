@@ -158,7 +158,7 @@ namespace Cowart.MultilingualText.Editor
         }
         #endregion
 
-        [MenuItem("Cowart/语言管理/打开编辑器")]
+        [MenuItem("Cowart/配置/多语言/文本编辑器")]
         public static void Open()
         {
             OpenWindow();

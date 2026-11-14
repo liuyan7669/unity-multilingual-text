@@ -9,13 +9,15 @@ namespace Cowart.MultilingualText
     /// 监听语言变化，并自动更新同一对象上的 Text 或 TMP_Text 组件。
     /// </summary>
     [DisallowMultipleComponent]
+    [Cowart.InspectorGroups.HideScript]
     public class MultilingualTextListener : MonoBehaviour, IMultilingualTextObserver
     {
         private const int UnboundTextId = 0;
-
+        [Cowart.InspectorGroups.FoldoutGroup("文本绑定", true, style: Cowart.InspectorGroups.InspectorGroupStyle.Framework)]
+        [Cowart.InspectorGroups.Label("多语言文本 ID")]
         [SerializeField, Min(0), Tooltip("填写 multilingual_text.json 中大于 0 的内容 ID；0 表示当前组件不绑定任何多语言内容。")]
         private int textId = UnboundTextId;
-
+        [Cowart.InspectorGroups.Label("缺失时清空文本")]
         [SerializeField, Tooltip("启用后，配置已加载但找不到对应 ID 时会清空 Text/TMP_Text；关闭后保留当前显示内容。")]
         private bool clearTextWhenMissing = true;
 

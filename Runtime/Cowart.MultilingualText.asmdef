@@ -3,6 +3,7 @@
   "rootNamespace": "Cowart.MultilingualText",
   "references": [
     "Unity.TextMeshPro",
-    "UnityEngine.UI"
+    "UnityEngine.UI",
+    "Cowart.InspectorGroups"
   ]
 }
